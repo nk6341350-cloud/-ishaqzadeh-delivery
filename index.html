@@ -72,6 +72,7 @@ label{display:block;font-size:13px;font-weight:800;margin:8px 0 5px}
    <div class="heroCard">
      <div class="heroTitle">ستا دوکان، ستا شاګردان، ستا بشپړ کنټرول 📦</div>
      <div class="heroSub">کندهار خرڅلاو • ګرشک او سپین بولدک رسونې • ورځنی راپور • د هر Admin فعالیت</div>
+      <button type="button" id="installAppBtn" class="btn-gold" style="margin-top:14px;width:100%">📲 اپلیکیشن نصب کړئ</button>
    </div>
  </div>
 
@@ -118,6 +119,7 @@ label{display:block;font-size:13px;font-weight:800;margin:8px 0 5px}
        <div class="formGrid">
          <div><label>د جنس نوم</label><input id="sItem" placeholder="مثلاً شامپو"></div>
          <div><label>مقدار</label><input id="sQty" placeholder="مثلاً 5 دانې"></div>
+          <div><label>قیمت (افغانۍ)</label><input id="sPrice" inputmode="numeric" placeholder="مثلاً 1500"></div>
          <div><label>د مشتری نوم</label><input id="sCustomer" placeholder="د مشتری نوم"></div>
          <div><label>د مشتری شمېره</label><input id="sPhone" inputmode="tel" placeholder="07..."></div>
        </div>
@@ -170,8 +172,53 @@ label{display:block;font-size:13px;font-weight:800;margin:8px 0 5px}
  </div>
 </div>
 
-<script src="https://www.gstatic.com/firebasejs/12.1.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.1.0/firebase-app-compat.js">
+let deferredInstallPrompt=null;
+window.addEventListener('beforeinstallprompt',function(e){
+  e.preventDefault();
+  deferredInstallPrompt=e;
+});
+document.getElementById('installAppBtn')?.addEventListener('click',async function(){
+  if(deferredInstallPrompt){
+    deferredInstallPrompt.prompt();
+    try{ await deferredInstallPrompt.userChoice; }catch(e){}
+    deferredInstallPrompt=null;
+    return;
+  }
+  const isiOS=/iphone|ipad|ipod/i.test(navigator.userAgent);
+  if(isiOS){
+    alert('په iPhone کې: د Safari د Share تڼۍ ووهئ، بیا “Add to Home Screen” وټاکئ.');
+  }else{
+    alert('که Install کړکۍ ښکاره نه شوه، د براوزر Menu خلاص کړئ او “Add to Home screen / Install app” وټاکئ.');
+  }
+});
+
+if('serviceWorker' in navigator){
+window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+}
+</script>
+<script src="https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore-compat.js">
+let deferredInstallPrompt=null;
+window.addEventListener('beforeinstallprompt',function(e){
+  e.preventDefault();
+  deferredInstallPrompt=e;
+});
+document.getElementById('installAppBtn')?.addEventListener('click',async function(){
+  if(deferredInstallPrompt){
+    deferredInstallPrompt.prompt();
+    try{ await deferredInstallPrompt.userChoice; }catch(e){}
+    deferredInstallPrompt=null;
+    return;
+  }
+  const isiOS=/iphone|ipad|ipod/i.test(navigator.userAgent);
+  if(isiOS){
+    alert('په iPhone کې: د Safari د Share تڼۍ ووهئ، بیا “Add to Home Screen” وټاکئ.');
+  }else{
+    alert('که Install کړکۍ ښکاره نه شوه، د براوزر Menu خلاص کړئ او “Add to Home screen / Install app” وټاکئ.');
+  }
+});
+
+</script>
 <script>
 
 const firebaseConfig = {
@@ -267,10 +314,23 @@ function esc(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&l
 function now(){return new Date()}
 function dayKey(d=new Date()){return new Date(d).toISOString().slice(0,10)}
 function addShipment(){
- const item=sItem.value.trim(), qty=sQty.value.trim(), customer=sCustomer.value.trim(), phone=sPhone.value.trim(), address=sAddress.value.trim(), branch=sBranch.value;
- if(!item||!customer||!phone){alert('د جنس نوم، مشتری او شمېره ولیکئ');return}
- shipments.unshift({id:Date.now().toString(),item,qty,customer,phone,address,branch,status:'pending',createdBy:USERS[current].name,createdAt:new Date().toISOString()});
- saveAll(); [sItem,sQty,sCustomer,sPhone,sAddress].forEach(x=>x.value=''); renderAll(); alert('جنس ثبت او واستول شو ✅');
+  const item=document.getElementById('sItem').value.trim();
+  const qty=document.getElementById('sQty').value.trim();
+  const price=Number(document.getElementById('sPrice').value||0);
+  const customer=document.getElementById('sCustomer').value.trim();
+  const phone=document.getElementById('sPhone').value.trim();
+  const address=document.getElementById('sAddress').value.trim();
+  const branch=document.getElementById('sBranch').value;
+  if(!item||!customer||!phone||!price){alert('د جنس نوم، قیمت، مشتری او شمېره ولیکئ');return}
+  shipments.unshift({
+    id:Date.now().toString(),item,qty,price,customer,phone,address,branch,
+    status:'pending',moneyReceived:false,createdBy:USERS[current].name,
+    createdAt:new Date().toISOString()
+  });
+  saveAll();
+  ['sItem','sQty','sPrice','sCustomer','sPhone','sAddress'].forEach(id=>document.getElementById(id).value='');
+  renderAll();
+  alert('جنس ثبت او واستول شو ✅');
 }
 function addSale(){
  const item=saleItem.value.trim(),qty=saleQty.value.trim(),customer=saleCustomer.value.trim(),phone=salePhone.value.trim(),address=saleAddress.value.trim(),price=Number(salePrice.value||0);
@@ -288,7 +348,7 @@ function shipmentCard(x,runnerMode=false){
  ${x.moneyReceived?'✅ پیسې ترلاسه شوې':'💰 پیسې ماته راورسېدې'}
  </button></div>`:'';
  return `<div class="item"><h3>${esc(x.item)} ${x.qty?'— '+esc(x.qty):''}</h3><div class="meta">
- 👤 مشتری: <b>${esc(x.customer)}</b><br>📞 ${esc(x.phone)}<br>📍 ${esc(x.address||'—')}<br>🧭 ${branch}<br>🧑‍💼 استوونکی: <b>${esc(x.createdBy)}</b><br>🕒 ${new Date(x.createdAt).toLocaleString()}
+ 👤 مشتری: <b>${esc(x.customer)}</b><br>📞 ${esc(x.phone)}<br>📍 ${esc(x.address||'—')}<br>💵 قیمت: <b>${Number(x.price||0).toLocaleString()} افغانۍ</b><br>🧭 ${branch}<br>🧑‍💼 استوونکی: <b>${esc(x.createdBy)}</b><br>🕒 ${new Date(x.createdAt).toLocaleString()}
  </div><span class="badge ${cl}">${st}</span>
  ${runnerMode?`<div class="action2">
  <button class="btn-blue" onclick="markReceived('${x.id}')" ${x.status!=='pending'?'disabled style="opacity:.4"':''}>📦 ماته راورسېد</button>
@@ -310,10 +370,14 @@ function renderRunner(){
  document.getElementById('runnerList').innerHTML=arr.length?arr.map(x=>shipmentCard(x,true)).join(''):'<p>تر اوسه ستا لپاره جنس نشته.</p>';
 }
 function confirmMoney(id){
- if(current!=='owner') return;
- const x=shipments.find(v=>v.id===id);
- if(!x || x.moneyReceived) return;
- x.moneyReceived=true; x.moneyReceivedAt=new Date().toISOString(); saveAll(); renderAll();
+  if(current!=='owner') return;
+  const x=shipments.find(v=>v.id===id);
+  if(!x || x.moneyReceived) return;
+  if(!confirm('ایا د دې جنس پیسې درته رسېدلې دي؟')) return;
+  x.moneyReceived=true;
+  x.moneyReceivedAt=new Date().toISOString();
+  saveAll();
+  renderAll();
 }
 function markReceived(id){const x=shipments.find(v=>v.id===id);if(!x||x.branch!==current||x.status!=='pending')return;x.status='received';x.receivedAt=new Date().toISOString();saveAll();renderRunner()}
 function markDelivered(id){const x=shipments.find(v=>v.id===id);if(!x||x.branch!==current||x.status!=='received')return;x.status='delivered';x.deliveredAt=new Date().toISOString();saveAll();renderRunner()}
@@ -342,6 +406,12 @@ function renderReports(){
  let html=`<div class="reportLine"><b>${current==='owner'?'ټول خرڅ شوي':'زما خرڅ شوي'}:</b><span>${ss.length}</span></div>
  <div class="reportLine"><b>${current==='owner'?'ټولې پیسې':'زما ټولې پیسې'}:</b><span>${ss.reduce((a,b)=>a+b.price,0).toLocaleString()} افغانۍ</span></div>
  <div class="reportLine"><b>${current==='owner'?'ولسوالیو ته ټول استول شوي':'زما استول شوي'}:</b><span>${sh.length}</span></div>`;
+  if(current==='owner'){
+    const settled=allShips.filter(x=>x.moneyReceived);
+    const unsettled=allShips.filter(x=>!x.moneyReceived);
+    html+=`<div class="reportLine"><b>✅ تصفیه شوي:</b><span>${settled.length} — ${settled.reduce((a,b)=>a+Number(b.price||0),0).toLocaleString()} افغانۍ</span></div>
+    <div class="reportLine"><b>⏳ ناتصفیه:</b><span>${unsettled.length} — ${unsettled.reduce((a,b)=>a+Number(b.price||0),0).toLocaleString()} افغانۍ</span></div>`;
+  }
  if(current==='owner'){
    ['اصلي مالک','مغفرالله سالار','ګل افغان','زبیع الله شهزاده'].forEach(a=>{
      const sa=allSales.filter(x=>x.createdBy===a), sha=allShips.filter(x=>x.createdBy===a);
@@ -372,6 +442,27 @@ if(db) db.collection('appdata').doc('sales').onSnapshot(snap=>{
 Object.assign(window,{
  selectRole,doLogin,logout,showTab,addShipment,addSale,
  confirmMoney,markReceived,markDelivered,renderReports
+});
+
+
+let deferredInstallPrompt=null;
+window.addEventListener('beforeinstallprompt',function(e){
+  e.preventDefault();
+  deferredInstallPrompt=e;
+});
+document.getElementById('installAppBtn')?.addEventListener('click',async function(){
+  if(deferredInstallPrompt){
+    deferredInstallPrompt.prompt();
+    try{ await deferredInstallPrompt.userChoice; }catch(e){}
+    deferredInstallPrompt=null;
+    return;
+  }
+  const isiOS=/iphone|ipad|ipod/i.test(navigator.userAgent);
+  if(isiOS){
+    alert('په iPhone کې: د Safari د Share تڼۍ ووهئ، بیا “Add to Home Screen” وټاکئ.');
+  }else{
+    alert('که Install کړکۍ ښکاره نه شوه، د براوزر Menu خلاص کړئ او “Add to Home screen / Install app” وټاکئ.');
+  }
 });
 
 </script>
