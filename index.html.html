@@ -85,8 +85,8 @@ label{display:block;font-size:13px;font-weight:800;margin:8px 0 5px}
        <button class="role" onclick="selectRole('gereshk')"><b>📍 ګرشک</b><span>یوازې د رسېدو دوه تڼۍ</span></button>
        <button class="role" onclick="selectRole('boldak')"><b>📍 سپین بولدک</b><span>یوازې د رسېدو دوه تڼۍ</span></button>
      </div>
-     <div class="pinRow">
-       <input id="pin" inputmode="numeric" placeholder="PIN ولیکئ">
+     <div id="selectedAccount" style="margin-top:12px;font-size:13px;font-weight:800;color:#52647d"></div><div class="pinRow">
+       <input id="pin" inputmode="numeric" autocomplete="off" placeholder="PIN ولیکئ" onkeydown="if(event.key==='Enter')doLogin()">
        <button class="btn-gold" onclick="doLogin()">ننوتل</button>
      </div>
    </section>
@@ -204,21 +204,38 @@ async function saveAll(){
    await db.collection('appdata').doc('sales').set({items:sales,updatedAt:new Date().toISOString()});
  }catch(e){ console.warn('Firebase save failed',e); }
 }
-function selectRole(r){selected=r;document.getElementById('pin').focus()}
+function selectRole(r){
+ selected=r;
+ const p=document.getElementById('pin');
+ if(p){p.value='';p.focus();}
+}
 function doLogin(){
- if(!selected){alert('لومړی حساب وټاکئ');return}
- if(document.getElementById('pin').value!==USERS[selected].pin){alert('PIN ناسم دی');return}
- current=selected; document.getElementById('login').classList.add('hidden'); document.getElementById('complaints').classList.remove('hidden');
+ const p=document.getElementById('pin');
+ if(!selected){alert('لومړی حساب وټاکئ');return;}
+ if(!p || p.value.trim()!==USERS[selected].pin){alert('PIN ناسم دی');return;}
+ current=selected;
+ document.getElementById('login').classList.add('hidden');
+ document.getElementById('complaints').classList.remove('hidden');
  if(USERS[current].kind==='admin'){
    document.getElementById('admin').classList.remove('hidden');
-   adminName.textContent=USERS[current].name; adminRole.textContent=USERS[current].role;
-   reportDate.value=new Date().toISOString().slice(0,10); renderAll();
+   document.getElementById('adminName').textContent=USERS[current].name;
+   document.getElementById('adminRole').textContent=USERS[current].role;
+   document.getElementById('reportDate').value=new Date().toISOString().slice(0,10);
+   renderAll();
  }else{
    document.getElementById('runner').classList.remove('hidden');
-   runnerTitle.textContent='📍 '+USERS[current].name; renderRunner();
+   document.getElementById('runnerTitle').textContent='📍 '+USERS[current].name;
+   renderRunner();
  }
 }
-function logout(){selected=current=null;pin.value='';admin.classList.add('hidden');runner.classList.add('hidden');login.classList.remove('hidden');complaints.classList.add('hidden');document.getElementById('ownerPins').classList.add('hidden')}
+function logout(){
+ selected=null;current=null;
+ const p=document.getElementById('pin');if(p)p.value='';
+ document.getElementById('admin').classList.add('hidden');
+ document.getElementById('runner').classList.add('hidden');
+ document.getElementById('login').classList.remove('hidden');
+ document.getElementById('complaints').classList.add('hidden');
+}
 function showTab(name,btn){document.querySelectorAll('.tabpage').forEach(x=>x.classList.add('hidden'));document.getElementById('tab-'+name).classList.remove('hidden');document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));btn.classList.add('active');renderAll()}
 function esc(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
 function now(){return new Date()}
@@ -258,13 +275,13 @@ function canSeeShipment(x){
  return x.branch===current;
 }
 function renderShipments(){
- const q=(searchShip?.value||'').toLowerCase();
+ const q=(document.getElementById('searchShip')?.value||'').toLowerCase();
  const arr=shipments.filter(x=>canSeeShipment(x) && JSON.stringify(x).toLowerCase().includes(q));
- shipList.innerHTML=arr.length?arr.map(x=>shipmentCard(x,false)).join(''):'<p>ستاسو په حساب کې رسونه نشته.</p>';
+ document.getElementById('shipList').innerHTML=arr.length?arr.map(x=>shipmentCard(x,false)).join(''):'<p>ستاسو په حساب کې رسونه نشته.</p>';
 }
 function renderRunner(){
  const arr=shipments.filter(x=>x.branch===current);
- runnerList.innerHTML=arr.length?arr.map(x=>shipmentCard(x,true)).join(''):'<p>تر اوسه ستا لپاره جنس نشته.</p>';
+ document.getElementById('runnerList').innerHTML=arr.length?arr.map(x=>shipmentCard(x,true)).join(''):'<p>تر اوسه ستا لپاره جنس نشته.</p>';
 }
 function confirmMoney(id){
  if(current!=='owner') return;
@@ -281,17 +298,17 @@ function visibleSales(){
 }
 function renderTodaySales(){
  const today=dayKey(); const arr=visibleSales().filter(x=>dayKey(x.createdAt)===today);
- todaySales.innerHTML='<h3 style="margin-top:18px">د نن ورځې خرڅلاو</h3>'+(arr.length?arr.map(x=>`<div class="item"><h3>${esc(x.item)} — ${esc(x.qty)}</h3><div class="meta">👤 ${esc(x.customer)}<br>💵 ${x.price.toLocaleString()} افغانۍ<br>🧑‍💼 خرڅوونکی: <b>${esc(x.createdBy)}</b></div><span class="badge b-sale">کندهار خرڅلاو</span></div>`).join(''):'<p>نن خرڅلاو لا نه دی ثبت شوی.</p>');
+ document.getElementById('todaySales').innerHTML='<h3 style="margin-top:18px">د نن ورځې خرڅلاو</h3>'+(arr.length?arr.map(x=>`<div class="item"><h3>${esc(x.item)} — ${esc(x.qty)}</h3><div class="meta">👤 ${esc(x.customer)}<br>💵 ${x.price.toLocaleString()} افغانۍ<br>🧑‍💼 خرڅوونکی: <b>${esc(x.createdBy)}</b></div><span class="badge b-sale">کندهار خرڅلاو</span></div>`).join(''):'<p>نن خرڅلاو لا نه دی ثبت شوی.</p>');
 }
 function renderStats(){
  const today=dayKey();
  const myShips=shipments.filter(x=>canSeeShipment(x));
  const ts=visibleSales().filter(x=>dayKey(x.createdAt)===today);
- stTotal.textContent=myShips.length; stTransit.textContent=myShips.filter(x=>x.status==='pending').length;
- stSales.textContent=ts.length; stMoney.textContent=ts.reduce((a,b)=>a+b.price,0).toLocaleString();
+ document.getElementById('stTotal').textContent=myShips.length; document.getElementById('stTransit').textContent=myShips.filter(x=>x.status==='pending').length;
+ document.getElementById('stSales').textContent=ts.length; document.getElementById('stMoney').textContent=ts.reduce((a,b)=>a+b.price,0).toLocaleString();
 }
 function renderReports(){
- const d=reportDate.value||dayKey();
+ const d=document.getElementById('reportDate').value||dayKey();
  const allSales=sales.filter(x=>dayKey(x.createdAt)===d);
  const allShips=shipments.filter(x=>dayKey(x.createdAt)===d);
  const ss=current==='owner'?allSales:allSales.filter(x=>x.createdBy===USERS[current].name);
@@ -305,7 +322,7 @@ function renderReports(){
      html+=`<div class="item"><h3>${a}</h3><div class="meta">🛍️ خرڅلاو: ${sa.length} — ${sa.reduce((p,c)=>p+c.price,0).toLocaleString()} افغانۍ<br>🚚 استول شوي: ${sha.length}</div></div>`;
    });
  }
- reportBox.innerHTML=html;
+ document.getElementById('reportBox').innerHTML=html;
 }
 function renderAll(){renderStats();renderTodaySales();renderShipments();renderReports()}
 
