@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#07162d">
 <title>اسحاقزاده ډلیوري</title>
 <link rel="manifest" href="manifest.json">
-<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="ishaqzadeh-delivery-logo.png">
 <style>
 :root{
  --bg:#07162d; --panel:#0e2342; --panel2:#132b4e; --gold:#f4c24f; --text:#f8fbff;
@@ -66,7 +66,7 @@ label{display:block;font-size:13px;font-weight:800;margin:8px 0 5px}
 <div class="app">
  <div class="hero">
    <div class="brand">
-     <img class="logo" src="icon-192.png" alt="logo">
+     <img class="logo" src="ishaqzadeh-delivery-logo.png" alt="logo">
      <div><h1>اسحاقزاده ډلیوري</h1><small>ISHAQZADEH DELIVERY • د خرڅلاو او رسولو مدیریت</small></div>
    </div>
    <div class="heroCard">
@@ -172,9 +172,9 @@ label{display:block;font-size:13px;font-weight:800;margin:8px 0 5px}
  </div>
 </div>
 
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
-import { getFirestore, collection, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+<script src="https://www.gstatic.com/firebasejs/12.1.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore-compat.js"></script>
+<script>
 
 const firebaseConfig = {
   apiKey: "AIzaSyCnXGdGALaG8M3mFSN6j68FmChPZ05NBfo",
@@ -185,8 +185,8 @@ const firebaseConfig = {
   appId: "1:731654462844:web:3ff12ccf4e394fa88d58f9",
   measurementId: "G-KK7SHZQ1X0"
 };
-const firebaseApp = initializeApp(firebaseConfig);
-const db = getFirestore(firebaseApp);
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
 
 const USERS={
  owner:{name:'اصلي مالک',role:'Super Admin',pin:'1111',kind:'admin'},
@@ -203,8 +203,8 @@ async function saveAll(){
  localStorage.setItem('iz_shipments',JSON.stringify(shipments));
  localStorage.setItem('iz_sales',JSON.stringify(sales));
  try{
-   await setDoc(doc(db,'appdata','shipments'),{items:shipments,updatedAt:new Date().toISOString()});
-   await setDoc(doc(db,'appdata','sales'),{items:sales,updatedAt:new Date().toISOString()});
+   await db.collection('appdata').doc('shipments').set({items:shipments,updatedAt:new Date().toISOString()});
+   await db.collection('appdata').doc('sales').set({items:sales,updatedAt:new Date().toISOString()});
  }catch(e){ console.warn('Firebase save failed',e); }
 }
 function selectRole(r){selected=r;document.getElementById('pin').focus()}
@@ -313,7 +313,7 @@ function renderReports(){
 function renderAll(){renderStats();renderTodaySales();renderShipments();renderReports()}
 
 // Live Firestore synchronization across phones.
-onSnapshot(doc(db,'appdata','shipments'), snap=>{
+db.collection('appdata').doc('shipments').onSnapshot(snap=>{
  if(snap.exists()){
    shipments = Array.isArray(snap.data().items) ? snap.data().items : [];
    localStorage.setItem('iz_shipments',JSON.stringify(shipments));
@@ -321,7 +321,7 @@ onSnapshot(doc(db,'appdata','shipments'), snap=>{
  }
 }, err=>console.warn('Shipments sync error',err));
 
-onSnapshot(doc(db,'appdata','sales'), snap=>{
+db.collection('appdata').doc('sales').onSnapshot(snap=>{
  if(snap.exists()){
    sales = Array.isArray(snap.data().items) ? snap.data().items : [];
    localStorage.setItem('iz_sales',JSON.stringify(sales));
@@ -333,7 +333,7 @@ Object.assign(window,{
  selectRole,doLogin,logout,showTab,addShipment,addSale,
  confirmMoney,markReceived,markDelivered,renderReports
 });
-if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(()=>{})}
+
 </script>
 </body>
 </html>
