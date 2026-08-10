@@ -491,5 +491,40 @@ document.getElementById('installAppBtn')?.addEventListener('click',async functio
 });
 
 </script>
+
+<script>
+/* Branch-student view patch: only Greshk/Spin Boldak receive-only workflow */
+(function () {
+  function isBranchStudentView() {
+    const s = document.body ? document.body.innerText : "";
+    return (s.includes("ګرشک") || s.includes("سپین بولدک")) &&
+           (s.includes("یوازي د رسیدو دوه تڼۍ") || s.includes("یواځی د رسیدو دوه تڼۍ"));
+  }
+  function applyBranchView() {
+    if (!isBranchStudentView()) return;
+    const els = Array.from(document.querySelectorAll("div,section,form,h1,h2,h3"));
+    const title = els.find(el => (el.textContent || "").trim().includes("نوی جنس ولسوالي ته واستوه"));
+    if (title) {
+      let box = title;
+      for (let i=0; i<6 && box; i++, box=box.parentElement) {
+        if (box.querySelector && box.querySelector("input,textarea,select")) {
+          box.style.display="none"; break;
+        }
+      }
+    }
+    document.querySelectorAll("button").forEach(btn => {
+      const t=(btn.textContent||"").trim();
+      if (t.includes("جنس استول") || t.includes("کندهار خرڅلاو") ||
+          t.includes("کندھار خرڅلاو") || t.includes("ټولي رسوني")) {
+        btn.style.display="none";
+      }
+    });
+  }
+  document.addEventListener("DOMContentLoaded",()=>setTimeout(applyBranchView,50));
+  document.addEventListener("click",()=>setTimeout(applyBranchView,80),true);
+  setInterval(applyBranchView,1200);
+})();
+</script>
+
 </body>
 </html>
