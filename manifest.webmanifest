@@ -1,0 +1,23 @@
+{
+  "name": "اسحاقزاده ډیلیوري",
+  "short_name": "اسحاقزاده",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#07162d",
+  "theme_color": "#07162d",
+  "icons": [
+    {
+      "src": "./ishaqzadeh-delivery-logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./ishaqzadeh-delivery-logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
