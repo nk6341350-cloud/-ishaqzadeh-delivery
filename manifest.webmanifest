@@ -8,13 +8,13 @@
   "theme_color": "#07162d",
   "icons": [
     {
-      "src": "./ishaqzadeh-delivery-logo.png",
+      "src": "./ishaqzadeh-delivery-logo.PNG",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "./ishaqzadeh-delivery-logo.png",
+      "src": "./ishaqzadeh-delivery-logo.PNG",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
