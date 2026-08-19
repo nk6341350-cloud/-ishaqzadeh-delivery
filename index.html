@@ -397,10 +397,10 @@ function shipmentCard(x,runnerMode=false){
 }
 function canSeeShipment(x){
  if(current==='owner') return true;
- if(current==='mogh' || current==='gul' || current==='zabi') return x.createdBy===USERS[current].name || x.branch==='gereshk' || x.branch==='boldak';
+ if(current==='mogh' || current==='gul' || current==='zabi') return x.createdBy===USERS[current].name;
  return x.branch===current;
 }
-function accountStats(key){let sh=(key==='gereshk'||key==='boldak')?shipments.filter(x=>x.branch===key):shipments.filter(x=>x.createdBy===USERS[key].name);let sl=(key==='gereshk'||key==='boldak')?[]:sales.filter(x=>x.createdBy===USERS[key].name);return {sent:sh.length,received:sh.filter(x=>x.status==='received').length,delivered:sh.filter(x=>x.status==='delivered').length,money:sh.filter(x=>x.status==='delivered').reduce((a,b)=>a+Number(b.price||0),0),sales:sl.reduce((a,b)=>a+Number(b.price||0),0)}}
+function accountStats(key){let sh,sl=[];if(key==='gereshk'||key==='boldak'){sh=(current==='owner')?shipments.filter(x=>x.branch===key):shipments.filter(x=>x.branch===key && x.createdBy===USERS[current].name);}else{sh=shipments.filter(x=>x.createdBy===USERS[key].name);sl=sales.filter(x=>x.createdBy===USERS[key].name);}return {sent:sh.length,received:sh.filter(x=>x.status==='received').length,delivered:sh.filter(x=>x.status==='delivered').length,money:sh.filter(x=>x.status==='delivered').reduce((a,b)=>a+Number(b.price||0),0),sales:sl.reduce((a,b)=>a+Number(b.price||0),0)}}
 function renderSeparateAccounts(){const box=document.getElementById('separateAccounts');if(!box||!current||USERS[current]?.kind!=='admin')return;const keys=current==='owner'?['owner','mogh','gul','zabi','gereshk','boldak']:[current,'gereshk','boldak'];box.innerHTML=keys.map(k=>{const a=accountStats(k);return `<div class="accountCard"><h3>${esc(USERS[k].name)}</h3><div class="accountMini"><span>ټول استول شوي<b>${a.sent}</b></span><span>رسېدلي<b>${a.received}</b></span><span>تسلیم شوي<b>${a.delivered}</b></span><span>د رسونو پیسې<b>${a.money.toLocaleString()}</b></span>${(k==='gereshk'||k==='boldak')?'':`<span>کندهار خرڅلاو<b>${a.sales.toLocaleString()}</b></span>`}</div></div>`}).join('')}
 
 function renderShipments(){
