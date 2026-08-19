@@ -459,9 +459,9 @@ function renderReports(){
  <div class="reportLine"><b>📦 رسېدلي:</b><span>${sh.filter(x=>x.status==='received').length}</span></div>
  <div class="reportLine"><b>✅ تسلیم شوي:</b><span>${sh.filter(x=>x.status==='delivered').length}</span></div>
  <div class="reportLine"><b>💵 ${current==='owner'?'ټولې':'زما'} د رسونو پیسې:</b><span>${sh.filter(x=>x.status==='delivered').reduce((a,b)=>a+Number(b.price||0),0).toLocaleString()} افغانۍ</span></div>`;
- if(USERS[current]?.kind==='admin'){
+ if(current==='owner'){
   html+='<div class="item"><h3>📡 د ټولو Adminانو د رسونو حالت</h3>';
-  ['اصلي مالک','مغفرالله سالار','ګل افغان','زبیع الله شهزاده'].forEach(a=>{
+  ['مغفرالله سالار','ګل افغان','زبیع الله شهزاده'].forEach(a=>{
    const q=allShips.filter(x=>x.createdBy===a);
    html+=`<div class="reportLine"><b>${a}</b><span>ټول ${q.length} • رسېدلي ${q.filter(x=>x.status==='received').length} • تسلیم ${q.filter(x=>x.status==='delivered').length}</span></div>`;
   });html+='</div>';
