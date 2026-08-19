@@ -411,7 +411,14 @@ function renderShipments(){
 }
 function renderRunner(){
  const arr=shipments.filter(x=>x.branch===current);
- document.getElementById('runnerList').innerHTML=arr.length?arr.map(x=>shipmentCard(x,true)).join(''):'<p>تر اوسه ستا لپاره جنس نشته.</p>';
+ const w=weekBounds();
+ const warr=arr.filter(x=>inWeek(x.createdAt,w));
+ const received=warr.filter(x=>x.status==='received' || x.status==='delivered').length;
+ const delivered=warr.filter(x=>x.status==='delivered').length;
+ const remaining=warr.filter(x=>x.status!=='delivered').length;
+ const deliveryMoney=warr.filter(x=>x.status==='delivered').reduce((a,b)=>a+Number(b.price||0),0);
+ const weeklyReport=`<div class="item"><h3>📚 د هفتې راپور</h3><div class="meta">${w.start.toLocaleDateString('en-CA')} — ${w.end.toLocaleDateString('en-CA')}</div><div class="reportLine"><b>📦 رسېدلي:</b><span>${received}</span></div><div class="reportLine"><b>✅ مشتری ته تسلیم شوي:</b><span>${delivered}</span></div><div class="reportLine"><b>⏳ پاتې جنسونه:</b><span>${remaining}</span></div><div class="reportLine"><b>💵 د تسلیم شوو جنسونو پیسې:</b><span>${deliveryMoney.toLocaleString()} افغانۍ</span></div></div>`;
+ document.getElementById('runnerList').innerHTML=weeklyReport+(arr.length?arr.map(x=>shipmentCard(x,true)).join(''):'<p>تر اوسه ستا لپاره جنس نشته.</p>');
 }
 function confirmMoney(id){
   if(current!=='owner') return;
