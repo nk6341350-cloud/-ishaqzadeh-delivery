@@ -110,6 +110,12 @@ body.kandahar-delivery-view #driverTransportFields{
 
 </style>
 
+
+<style id="transport-fields-scope-fix">
+#driverTransportFields{display:none!important;}
+body.kandahar-delivery-view #driverTransportFields{display:grid!important;}
+</style>
+
 </head>
 <body>
 <div class="app">
@@ -349,6 +355,7 @@ function doLogin(){
  if(!entered){alert('PIN ولیکئ');return}
  if(entered!==USERS[target].pin){alert('PIN ناسم دی');return}
  selected=target;current=target;
+ document.body.classList.toggle('kandahar-delivery-view', current==='kandaharDelivery');
  document.getElementById('selectedAccount').textContent='خلاص شوی حساب: '+USERS[current].name;
  document.getElementById('login').classList.add('hidden');
  document.getElementById('complaints').classList.remove('hidden');
