@@ -90,6 +90,24 @@ body.kandahar-delivery-view #tab-sale,
 body.kandahar-delivery-view #tab-shipments,
 body.kandahar-delivery-view #tab-reports{display:none!important;}
 
+
+/* Kandahar Delivery: show only quantity, transport fee, driver phone, and destination */
+body.kandahar-delivery-view #tab-send .formGrid > div:nth-child(1),
+body.kandahar-delivery-view #tab-send .formGrid > div:nth-child(3),
+body.kandahar-delivery-view #tab-send .formGrid > div:nth-child(4),
+body.kandahar-delivery-view #tab-send .formGrid > div:nth-child(5),
+body.kandahar-delivery-view #tab-send > label[for],
+body.kandahar-delivery-view #tab-send #sAddress,
+body.kandahar-delivery-view #tab-send > label:nth-of-type(1) {
+  display:none!important;
+}
+body.kandahar-delivery-view #tab-send .formGrid:first-of-type > div:nth-child(2){
+  display:block!important;
+}
+body.kandahar-delivery-view #driverTransportFields{
+  display:grid!important;
+}
+
 </style>
 
 </head>
@@ -168,7 +186,7 @@ body.kandahar-delivery-view #tab-reports{display:none!important;}
          <div><label>د مشتری نوم</label><input id="sCustomer" placeholder="د مشتری نوم"></div>
          <div><label>د مشتری شمېره</label><input id="sPhone" inputmode="tel" placeholder="07..."></div>
        </div>
-       <label>د مشتری آدرس</label><textarea id="sAddress"></textarea>
+       <label id="sAddressLabel">د مشتری آدرس</label><textarea id="sAddress"></textarea>
        <label>ولسوالي</label>
        <select id="sBranch"><option value="gereshk">ګرشک</option><option value="boldak">سپین بولدک</option></select>
        <button class="btn-dark full" style="margin-top:12px" onclick="addShipment()">ثبت او واستوه</button>
@@ -367,17 +385,54 @@ function esc(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&l
 function now(){return new Date()}
 function dayKey(d=new Date()){return new Date(d).toISOString().slice(0,10)}
 function addShipment(){
-  const item=document.getElementById('sItem').value.trim();
   const qty=document.getElementById('sQty').value.trim();
+  const branch=document.getElementById('sBranch').value;
+  const driverPhone=(document.getElementById('sDriverPhone')?.value||'').trim();
+  const transportFee=Number(document.getElementById('sTransportFee')?.value||0);
+
+  if(current==='kandaharDelivery'){
+    if(!qty || !driverPhone || !transportFee){
+      alert('د جنس مقدار، کرایه او د ډرایور شمېره ولیکئ');
+      return;
+    }
+    shipments.unshift({
+      id:Date.now().toString(),
+      item:'جنسونه',
+      qty,
+      price:0,
+      customer:'',
+      phone:'',
+      address:'',
+      branch,
+      driverPhone,
+      transportFee,
+      kandaharDeliveryOnly:true,
+      status:'pending',
+      moneyReceived:false,
+      createdBy:USERS[current].name,
+      createdAt:new Date().toISOString()
+    });
+    saveAll();
+    ['sQty','sDriverPhone','sTransportFee'].forEach(id=>{
+      const el=document.getElementById(id);
+      if(el) el.value='';
+    });
+    renderAll();
+    alert('جنس ثبت او واستول شو ✅');
+    return;
+  }
+
+  const item=document.getElementById('sItem').value.trim();
   const price=Number(document.getElementById('sPrice').value||0);
   const customer=document.getElementById('sCustomer').value.trim();
   const phone=document.getElementById('sPhone').value.trim();
   const address=document.getElementById('sAddress').value.trim();
-  const branch=document.getElementById('sBranch').value;
-  const driverPhone=(document.getElementById('sDriverPhone')?.value||'').trim();
-  const transportFee=Number(document.getElementById('sTransportFee')?.value||0);
-  if(!item||!customer||!phone||!price){alert('د جنس نوم، قیمت، مشتری او شمېره ولیکئ');return}
-  if(current==='kandaharDelivery' && (!driverPhone || !transportFee)){alert('د ډرایور شمېره او د جنسونو کرایه ولیکئ');return}
+
+  if(!item||!customer||!phone||!price){
+    alert('د جنس نوم، قیمت، مشتری او شمېره ولیکئ');
+    return;
+  }
+
   shipments.unshift({
     id:Date.now().toString(),item,qty,price,customer,phone,address,branch,
     driverPhone,transportFee,
@@ -385,7 +440,10 @@ function addShipment(){
     createdAt:new Date().toISOString()
   });
   saveAll();
-  ['sItem','sQty','sPrice','sCustomer','sPhone','sAddress','sDriverPhone','sTransportFee'].forEach(id=>{const el=document.getElementById(id); if(el)el.value='';});
+  ['sItem','sQty','sPrice','sCustomer','sPhone','sAddress','sDriverPhone','sTransportFee'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el)el.value='';
+  });
   renderAll();
   alert('جنس ثبت او واستول شو ✅');
 }
@@ -398,6 +456,22 @@ function addSale(){
 function statusLabel(s){return s==='received'?['شاګرد ته رسېدلی','b-received']:s==='delivered'?['مشتري ته تسلیم شوی','b-delivered']:['په لاره کې','b-pending']}
 function shipmentCard(x,runnerMode=false){
  const [st,cl]=statusLabel(x.status); const branch=x.branch==='gereshk'?'ګرشک':'سپین بولدک';
+ if(x.kandaharDeliveryOnly){
+   return `<div class="item"><h3>📦 د کندهار ډلیوري استونه</h3><div class="meta">
+   📦 د جنس مقدار: <b>${esc(x.qty||'—')}</b><br>
+   💸 کرایه: <b>${Number(x.transportFee||0).toLocaleString()} افغانۍ</b><br>
+   🚗 د ډرایور شمېره: <b>${esc(x.driverPhone||'—')}</b><br>
+   📍 ځای: <b>${branch}</b><br>
+   🕒 ${new Date(x.createdAt).toLocaleString()}
+   </div><span class="badge ${cl}">${st}</span>
+   ${runnerMode?`<div class="action2">
+   <button class="btn-blue" onclick="markReceived('${x.id}')" ${x.status!=='pending'?'disabled style="opacity:.4"':''}>📦 ماته راورسېد</button>
+   <button class="btn-green" onclick="markDelivered('${x.id}')" ${x.status!=='received'?'disabled style="opacity:.4"':''}>✅ تسلیم شو</button></div>`:''}
+   ${(current==='owner'||current==='kandaharDelivery')?`<div class="action2">
+   <button class="btn-blue" onclick="editShipment('${x.id}')">✏️ Update</button>
+   <button class="btn-red" onclick="deleteShipment('${x.id}')">🗑️ Delete</button></div>`:''}
+   </div>`;
+ }
  const moneyText=x.moneyReceived?'✅ پیسې ماته راورسېدې':'💰 پیسې لا نه دي تایید شوې';
  const ownerMoney=current==='owner'?`<div class="ownerMoney">
  <span class="badge ${x.moneyReceived?'b-delivered':'b-pending'}">${moneyText}</span>
@@ -453,6 +527,20 @@ function confirmMoney(id){
 async function editShipment(id){
  const x=shipments.find(v=>String(v.id)===String(id));if(!x)return;
  if(!(current==='owner'||x.createdBy===USERS[current]?.name))return;
+
+ if(x.kandaharDeliveryOnly){
+   const qty=prompt('د جنس مقدار',x.qty||'');if(qty===null)return;
+   const fee=prompt('کرایه (افغانۍ)',String(x.transportFee||0));if(fee===null)return;
+   const driver=prompt('د ډرایور شمېره',x.driverPhone||'');if(driver===null)return;
+   const branch=prompt('ځای: gereshk یا boldak',x.branch||'gereshk');if(branch===null)return;
+   x.qty=qty.trim();
+   x.transportFee=Number(fee||0);
+   x.driverPhone=driver.trim();
+   if(branch==='gereshk'||branch==='boldak') x.branch=branch;
+   x.updatedAt=new Date().toISOString();
+   await saveAll();renderAll();return;
+ }
+
  const item=prompt('د جنس نوم',x.item);if(item===null)return;
  const qty=prompt('مقدار',x.qty||'');if(qty===null)return;
  const price=prompt('قیمت',String(x.price||0));if(price===null)return;
@@ -702,6 +790,25 @@ if('serviceWorker' in navigator){
   });
 }
 </script>
+
+
+<style id="kandahar-delivery-three-fields-final">
+body.kandahar-delivery-view #tab-send .formGrid:first-of-type > div:nth-child(1),
+body.kandahar-delivery-view #tab-send .formGrid:first-of-type > div:nth-child(3),
+body.kandahar-delivery-view #tab-send .formGrid:first-of-type > div:nth-child(4),
+body.kandahar-delivery-view #tab-send .formGrid:first-of-type > div:nth-child(5),
+body.kandahar-delivery-view #sAddressLabel,
+body.kandahar-delivery-view #sAddress{
+  display:none!important;
+}
+body.kandahar-delivery-view #tab-send .sectionTitle{
+  font-size:0;
+}
+body.kandahar-delivery-view #tab-send .sectionTitle::after{
+  content:"له کندهاره ولسوالۍ ته جنس ولېږه";
+  font-size:17px;
+}
+</style>
 
 </body>
 </html>
