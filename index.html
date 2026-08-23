@@ -186,7 +186,11 @@ body.kandahar-delivery-view #driverTransportFields{
          <div><label>د مشتری نوم</label><input id="sCustomer" placeholder="د مشتری نوم"></div>
          <div><label>د مشتری شمېره</label><input id="sPhone" inputmode="tel" placeholder="07..."></div>
        </div>
-       <label id="sAddressLabel">د مشتری آدرس</label><textarea id="sAddress"></textarea>
+       <label id="sAddressLabel">د مشتری آدرس</label><textarea id="sAddress"></textarea><div id="driverTransportFields" class="formGrid" style="margin-top:10px">
+          <div><label>کرایه (افغانۍ)</label><input id="sTransportFee" inputmode="numeric" placeholder="مثلاً 200"></div>
+          <div><label>د ډرایور شمېره</label><input id="sDriverPhone" inputmode="tel" placeholder="07..."></div>
+        </div>
+        
        <label>ولسوالي</label>
        <select id="sBranch"><option value="gereshk">ګرشک</option><option value="boldak">سپین بولدک</option></select>
        <button class="btn-dark full" style="margin-top:12px" onclick="addShipment()">ثبت او واستوه</button>
