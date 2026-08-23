@@ -469,8 +469,7 @@ function shipmentCard(x,runnerMode=false){
    🕒 ${new Date(x.createdAt).toLocaleString()}
    </div><span class="badge ${cl}">${st}</span>
    ${runnerMode?`<div class="action2">
-   <button class="btn-blue" onclick="markReceived('${x.id}')" ${x.status!=='pending'?'disabled style="opacity:.4"':''}>📦 ماته راورسېد</button>
-   <button class="btn-green" onclick="markDelivered('${x.id}')" ${x.status!=='received'?'disabled style="opacity:.4"':''}>✅ تسلیم شو</button></div>`:''}
+   <button class="btn-green full" onclick="markReceived('${x.id}')" ${x.status!=='pending'?'disabled style="opacity:.4"':''}>📦 هو، دغه جنسونه ماته تسلیم شول</button></div>`:''}
    ${(current==='owner'||current==='kandaharDelivery')?`<div class="action2">
    <button class="btn-blue" onclick="editShipment('${x.id}')">✏️ Update</button>
    <button class="btn-red" onclick="deleteShipment('${x.id}')">🗑️ Delete</button></div>`:''}
@@ -515,7 +514,8 @@ function renderRunner(){
  const delivered=warr.filter(x=>x.status==='delivered').length;
  const remaining=warr.filter(x=>x.status!=='delivered').length;
  const deliveryMoney=warr.filter(x=>x.status==='delivered').reduce((a,b)=>a+Number(b.price||0),0);
- const weeklyReport=`<div class="item"><h3>📚 د هفتې راپور</h3><div class="meta">${w.start.toLocaleDateString('en-CA')} — ${w.end.toLocaleDateString('en-CA')}</div><div class="reportLine"><b>📦 رسېدلي:</b><span>${received}</span></div><div class="reportLine"><b>✅ مشتری ته تسلیم شوي:</b><span>${delivered}</span></div><div class="reportLine"><b>⏳ پاتې جنسونه:</b><span>${remaining}</span></div><div class="reportLine"><b>💵 د تسلیم شوو جنسونو پیسې:</b><span>${deliveryMoney.toLocaleString()} افغانۍ</span></div></div>`;
+ const transportFees=warr.filter(x=>x.kandaharDeliveryOnly && (x.status==='received'||x.status==='delivered')).reduce((a,b)=>a+Number(b.transportFee||0),0);
+ const weeklyReport=`<div class="item"><h3>📚 د هفتې راپور</h3><div class="meta">${w.start.toLocaleDateString('en-CA')} — ${w.end.toLocaleDateString('en-CA')}</div><div class="reportLine"><b>📦 رسېدلي:</b><span>${received}</span></div><div class="reportLine"><b>✅ مشتری ته تسلیم شوي:</b><span>${delivered}</span></div><div class="reportLine"><b>⏳ پاتې جنسونه:</b><span>${remaining}</span></div><div class="reportLine"><b>🚚 د هفتې کرایه:</b><span>${transportFees.toLocaleString()} افغانۍ</span></div><div class="reportLine"><b>💵 د تسلیم شوو جنسونو پیسې:</b><span>${deliveryMoney.toLocaleString()} افغانۍ</span></div></div>`;
  document.getElementById('runnerList').innerHTML=weeklyReport+(arr.length?arr.map(x=>shipmentCard(x,true)).join(''):'<p>تر اوسه ستا لپاره جنس نشته.</p>');
 }
 function confirmMoney(id){
@@ -595,7 +595,17 @@ function renderReports(){
   }else html+='<p>په دې نېټه د کندهار خرڅلاو نشته.</p>';
   html+='</div>';
  }
- const sd=new Date((d||dayKey())+'T12:00:00'),w=weekBounds(sd),wsh=shipments.filter(x=>inWeek(x.createdAt,w)),wsl=sales.filter(x=>inWeek(x.createdAt,w)),rkeys=current==='owner'?['mogh','gul','zabi']:[current],sum=a=>a.reduce((z,x)=>z+Number(x.price||0),0);html+=`<div class="item"><h3>📚 د هفتې راپور</h3><div class="meta">${w.start.toLocaleDateString('en-CA')} — ${w.end.toLocaleDateString('en-CA')}</div>`;rkeys.forEach(k=>{const n=USERS[k].name,sh=wsh.filter(x=>x.createdBy===n),sl=wsl.filter(x=>x.createdBy===n),g=sh.filter(x=>x.branch==='gereshk'),b=sh.filter(x=>x.branch==='boldak');html+=`<div class="item"><h3>${esc(n)}</h3><div class="meta">📦 ټول استول: <b>${sh.length}</b><br>📍 ګرشک: <b>${g.length}</b> — ${sum(g).toLocaleString()} افغانۍ<br>📍 سپین بولدک: <b>${b.length}</b> — ${sum(b).toLocaleString()} افغانۍ<br>🛍️ کندهار خرڅلاو: <b>${sl.length}</b> — ${sum(sl).toLocaleString()} افغانۍ</div></div>`});html+='</div>';
+ const sd=new Date((d||dayKey())+'T12:00:00'),w=weekBounds(sd),wsh=shipments.filter(x=>inWeek(x.createdAt,w)),wsl=sales.filter(x=>inWeek(x.createdAt,w)),rkeys=current==='owner'?['mogh','gul','zabi']:[current],sum=a=>a.reduce((z,x)=>z+Number(x.price||0),0);
+ if(current==='owner'){
+   const confirmedTransport=wsh.filter(x=>x.kandaharDeliveryOnly && (x.status==='received'||x.status==='delivered'));
+   const gFee=confirmedTransport.filter(x=>x.branch==='gereshk').reduce((a,b)=>a+Number(b.transportFee||0),0);
+   const bFee=confirmedTransport.filter(x=>x.branch==='boldak').reduce((a,b)=>a+Number(b.transportFee||0),0);
+   html+=`<div class="item"><h3>🚚 د هفتې د جنسونو کرایه</h3>
+   <div class="reportLine"><b>📍 ګرشک:</b><span>${gFee.toLocaleString()} افغانۍ</span></div>
+   <div class="reportLine"><b>📍 سپین بولدک:</b><span>${bFee.toLocaleString()} افغانۍ</span></div>
+   <div class="reportLine"><b>💰 ټولې کرایې:</b><span>${(gFee+bFee).toLocaleString()} افغانۍ</span></div></div>`;
+ }
+ html+=`<div class="item"><h3>📚 د هفتې راپور</h3><div class="meta">${w.start.toLocaleDateString('en-CA')} — ${w.end.toLocaleDateString('en-CA')}</div>`;rkeys.forEach(k=>{const n=USERS[k].name,sh=wsh.filter(x=>x.createdBy===n),sl=wsl.filter(x=>x.createdBy===n),g=sh.filter(x=>x.branch==='gereshk'),b=sh.filter(x=>x.branch==='boldak');html+=`<div class="item"><h3>${esc(n)}</h3><div class="meta">📦 ټول استول: <b>${sh.length}</b><br>📍 ګرشک: <b>${g.length}</b> — ${sum(g).toLocaleString()} افغانۍ<br>📍 سپین بولدک: <b>${b.length}</b> — ${sum(b).toLocaleString()} افغانۍ<br>🛍️ کندهار خرڅلاو: <b>${sl.length}</b> — ${sum(sl).toLocaleString()} افغانۍ</div></div>`});html+='</div>';
   reportBox.innerHTML=html;
 }
 function renderAll(){
