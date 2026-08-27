@@ -151,8 +151,6 @@ body.branch-student #ownerPinPanel{display:none!important;}
           <div><label>قیمت (افغانۍ)</label><input id="sPrice" inputmode="numeric" placeholder="مثلاً 1500"></div>
          <div><label>د مشتری نوم</label><input id="sCustomer" placeholder="د مشتری نوم"></div>
          <div><label>د مشتری شمېره</label><input id="sPhone" inputmode="tel" placeholder="07..."></div>
-         <div><label>کرایه (افغانۍ)</label><input id="sFare" inputmode="numeric" placeholder="مثلاً 500"></div>
-         <div><label>د ډرایور شمېره</label><input id="sDriverPhone" inputmode="tel" placeholder="07..."></div>
        </div>
        <label>د مشتری آدرس</label><textarea id="sAddress"></textarea>
        <label>ولسوالي</label>
@@ -356,18 +354,15 @@ function addShipment(){
   const customer=document.getElementById('sCustomer').value.trim();
   const phone=document.getElementById('sPhone').value.trim();
   const address=document.getElementById('sAddress').value.trim();
-  const fare=Number(document.getElementById('sFare').value||0);
-  const driverPhone=document.getElementById('sDriverPhone').value.trim();
   const branch=document.getElementById('sBranch').value;
-  if(!item||!qty||!fare||!driverPhone){alert('د جنس مقدار، کرایه او د ډرایور شمېره ولیکئ');return}
-  if(!customer||!phone||!price){alert('د قیمت، مشتری او د مشتری شمېره ولیکئ');return}
+  if(!item||!customer||!phone||!price){alert('د جنس نوم، قیمت، مشتری او شمېره ولیکئ');return}
   shipments.unshift({
-    id:Date.now().toString(),item,qty,price,customer,phone,address,fare,driverPhone,branch,
+    id:Date.now().toString(),item,qty,price,customer,phone,address,branch,
     status:'pending',moneyReceived:false,createdBy:USERS[current].name,
     createdAt:new Date().toISOString()
   });
   saveAll();
-  ['sItem','sQty','sPrice','sCustomer','sPhone','sAddress','sFare','sDriverPhone'].forEach(id=>document.getElementById(id).value='');
+  ['sItem','sQty','sPrice','sCustomer','sPhone','sAddress'].forEach(id=>document.getElementById(id).value='');
   renderAll();
   alert('جنس ثبت او واستول شو ✅');
 }
@@ -387,7 +382,7 @@ function shipmentCard(x,runnerMode=false){
  ${x.moneyReceived?'✅ پیسې ترلاسه شوې':'💰 پیسې ماته راورسېدې'}
  </button></div>`:'';
  return `<div class="item"><h3>${esc(x.item)} ${x.qty?'— '+esc(x.qty):''}</h3><div class="meta">
- 👤 مشتری: <b>${esc(x.customer)}</b><br>📞 ${esc(x.phone)}<br>📍 ${esc(x.address||'—')}<br>💵 قیمت: <b>${Number(x.price||0).toLocaleString()} افغانۍ</b><br>🚚 کرایه: <b>${Number(x.fare||0).toLocaleString()} افغانۍ</b><br>📱 د ډرایور شمېره: <b>${esc(x.driverPhone||'—')}</b><br>🧭 ${branch}<br>🧑‍💼 استوونکی: <b>${esc(x.createdBy)}</b><br>🕒 ${new Date(x.createdAt).toLocaleString()}
+ 👤 مشتری: <b>${esc(x.customer)}</b><br>📞 ${esc(x.phone)}<br>📍 ${esc(x.address||'—')}<br>💵 قیمت: <b>${Number(x.price||0).toLocaleString()} افغانۍ</b><br>🧭 ${branch}<br>🧑‍💼 استوونکی: <b>${esc(x.createdBy)}</b><br>🕒 ${new Date(x.createdAt).toLocaleString()}
  </div><span class="badge ${cl}">${st}</span>
  ${runnerMode?`<div class="action2">
  <button class="btn-blue" onclick="markReceived('${x.id}')" ${x.status!=='pending'?'disabled style="opacity:.4"':''}>📦 ماته راورسېد</button>
