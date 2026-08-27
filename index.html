@@ -6,11 +6,11 @@
 <meta name="theme-color" content="#07162d">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="اسحاقزاده">
+<meta name="apple-mobile-web-app-title" content="اسحاقزاده ډلیوري">
 <title>اسحاقزاده ډلیوري</title>
 <link rel="manifest" href="./manifest.webmanifest">
-<link rel="apple-touch-icon" href="./ishaqzadeh-delivery-logo.jpeg">
-<link rel="icon" type="image/png" href="./ishaqzadeh-delivery-logo.jpeg">
+<link rel="apple-touch-icon" href="./ishaqzadeh-delivery-logo.png">
+<link rel="icon" type="image/png" href="./ishaqzadeh-delivery-logo.png">
 <style>
 :root{
  --bg:#07162d; --panel:#0e2342; --panel2:#132b4e; --gold:#f4c24f; --text:#f8fbff;
@@ -69,6 +69,7 @@ label{display:block;font-size:13px;font-weight:800;margin:8px 0 5px}
 .linkRow .linkInfo{flex:1;min-width:0}
 .linkRow b{display:block}.linkRow small{display:block;color:#718197;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;direction:ltr;text-align:left}
 .linkRow button{flex:0 0 auto}
+.accountDash{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:12px}.accountCard{border:1px solid #e6ecf3;border-radius:18px;padding:14px;background:#fcfdff}.accountCard h3{margin:0 0 9px;font-size:16px}.accountMini{display:grid;grid-template-columns:repeat(2,1fr);gap:7px;font-size:12px;color:#52647d}.accountMini b{display:block;color:#152033;font-size:17px;margin-top:2px}@media(max-width:720px){.accountDash{grid-template-columns:1fr}}
 </style>
 
 <style>
@@ -83,7 +84,7 @@ body.branch-student #ownerPinPanel{display:none!important;}
 <div class="app">
  <div class="hero">
    <div class="brand">
-     <img class="logo" src="./ishaqzadeh-delivery-logo.jpeg" alt="logo">
+     <img class="logo" src="./ishaqzadeh-delivery-logo.png" alt="logo">
      <div><h1>اسحاقزاده ډلیوري</h1><small>ISHAQZADEH DELIVERY • د خرڅلاو او رسولو مدیریت</small></div>
    </div>
    <div class="heroCard">
@@ -115,12 +116,13 @@ body.branch-student #ownerPinPanel{display:none!important;}
 <div class="stat"><strong id="stReceived">0</strong><span>رسېدلي</span></div>
 <div class="stat"><strong id="stDelivered">0</strong><span>تسلیم شوي</span></div>
 <div class="stat"><strong id="stShipMoney">0</strong><span>د رسونو پیسې</span></div>
-<div class="stat"><strong id="stSales">0</strong><span>نن خرڅ شوي</span></div>
-<div class="stat"><strong id="stMoney">0</strong><span>نن افغانۍ</span></div>
+<div class="stat"><strong id="stSales">0</strong><span>د هفتې کندهار خرڅلاو</span></div>
+<div class="stat"><strong id="stMoney">0</strong><span>د هفتې کندهار افغانۍ</span></div>
 </div></div>
      </div>
 
      
+<div id="separateAccountsPanel" class="card hidden"><h2 class="sectionTitle">👥 د هر چا جلا حساب</h2><div class="note">د هر کس د روانې هفتې حساب جلا دی؛ له شنبې سهار څخه د پنجشنبې تر ماښامه.</div><div id="separateAccounts" class="accountDash"></div></div>
 <div id="ownerLinksPanel" class="card hidden">
   <h2 class="sectionTitle">🔗 د هر کس جلا لینک</h2>
   <div class="note">هر لینک یوازې د هماغه کس حساب خلاصوي. لینک کاپي کړه او هماغه کس ته یې واستوه.</div>
@@ -320,6 +322,7 @@ function doLogin(){
   document.getElementById('reportDate').value=new Date().toISOString().slice(0,10);
   document.getElementById('ownerPinPanel')?.classList.toggle('hidden',current!=='owner');
   document.getElementById('ownerLinksPanel')?.classList.toggle('hidden',current!=='owner');
+  document.getElementById('separateAccountsPanel')?.classList.remove('hidden'); renderSeparateAccounts();
   if(current==='owner') renderOwnerLinks();
   renderAll();
  }else{
@@ -397,6 +400,10 @@ function canSeeShipment(x){
  if(current==='mogh' || current==='gul' || current==='zabi') return x.createdBy===USERS[current].name;
  return x.branch===current;
 }
+function weekBounds(d=new Date()){const x=new Date(d);x.setHours(0,0,0,0);const back=(x.getDay()+1)%7;const start=new Date(x);start.setDate(x.getDate()-back);start.setHours(0,0,0,0);const end=new Date(start);end.setDate(start.getDate()+6);end.setHours(23,59,59,999);return {start,end}}
+function inWeek(iso,w=weekBounds()){const t=new Date(iso);return t>=w.start&&t<=w.end}
+function personWeekStats(k){const n=USERS[k].name,sh=shipments.filter(x=>x.createdBy===n&&inWeek(x.createdAt)),sl=sales.filter(x=>x.createdBy===n&&inWeek(x.createdAt)),g=sh.filter(x=>x.branch==='gereshk'),b=sh.filter(x=>x.branch==='boldak'),sum=a=>a.reduce((z,x)=>z+Number(x.price||0),0);return {sent:sh.length,transit:sh.filter(x=>x.status==='pending').length,received:sh.filter(x=>x.status==='received').length,delivered:sh.filter(x=>x.status==='delivered').length,gc:g.length,gm:sum(g),bc:b.length,bm:sum(b),money:sum(sh.filter(x=>x.status==='delivered')),sc:sl.length,sm:sum(sl)}}
+function renderSeparateAccounts(){const box=document.getElementById('separateAccounts');if(!box||!current||USERS[current]?.kind!=='admin')return;const keys=current==='owner'?['mogh','gul','zabi']:[current];box.innerHTML=keys.map(k=>{const x=personWeekStats(k);return `<div class="accountCard"><h3>${esc(USERS[k].name)}</h3><div class="accountMini"><span>ټول استول شوي<b>${x.sent}</b></span><span>په لاره کې<b>${x.transit}</b></span><span>ګرشک ته<b>${x.gc}</b><small>${x.gm.toLocaleString()} افغانۍ</small></span><span>سپین بولدک ته<b>${x.bc}</b><small>${x.bm.toLocaleString()} افغانۍ</small></span><span>رسېدلي<b>${x.received}</b></span><span>تسلیم شوي<b>${x.delivered}</b></span><span>د رسونو پیسې<b>${x.money.toLocaleString()}</b></span><span>کندهار خرڅلاو<b>${x.sc}</b><small>${x.sm.toLocaleString()} افغانۍ</small></span></div></div>`}).join('')}
 function renderShipments(){
  const q=(document.getElementById('searchShip')?.value||'').toLowerCase();
  const arr=shipments.filter(x=>canSeeShipment(x) && JSON.stringify(x).toLowerCase().includes(q));
@@ -404,7 +411,14 @@ function renderShipments(){
 }
 function renderRunner(){
  const arr=shipments.filter(x=>x.branch===current);
- document.getElementById('runnerList').innerHTML=arr.length?arr.map(x=>shipmentCard(x,true)).join(''):'<p>تر اوسه ستا لپاره جنس نشته.</p>';
+ const w=weekBounds();
+ const warr=arr.filter(x=>inWeek(x.createdAt,w));
+ const received=warr.filter(x=>x.status==='received' || x.status==='delivered').length;
+ const delivered=warr.filter(x=>x.status==='delivered').length;
+ const remaining=warr.filter(x=>x.status!=='delivered').length;
+ const deliveryMoney=warr.filter(x=>x.status==='delivered').reduce((a,b)=>a+Number(b.price||0),0);
+ const weeklyReport=`<div class="item"><h3>📚 د هفتې راپور</h3><div class="meta">${w.start.toLocaleDateString('en-CA')} — ${w.end.toLocaleDateString('en-CA')}</div><div class="reportLine"><b>📦 رسېدلي:</b><span>${received}</span></div><div class="reportLine"><b>✅ مشتری ته تسلیم شوي:</b><span>${delivered}</span></div><div class="reportLine"><b>⏳ پاتې جنسونه:</b><span>${remaining}</span></div><div class="reportLine"><b>💵 د تسلیم شوو جنسونو پیسې:</b><span>${deliveryMoney.toLocaleString()} افغانۍ</span></div></div>`;
+ document.getElementById('runnerList').innerHTML=weeklyReport+(arr.length?arr.map(x=>shipmentCard(x,true)).join(''):'<p>تر اوسه ستا لپاره جنس نشته.</p>');
 }
 function confirmMoney(id){
   if(current!=='owner') return;
@@ -439,20 +453,8 @@ function visibleSales(){
  if(current==='mogh' || current==='gul' || current==='zabi') return sales.filter(x=>x.createdBy===USERS[current].name);
  return [];
 }
-function renderTodaySales(){
- const today=dayKey(); const arr=visibleSales().filter(x=>dayKey(x.createdAt)===today);
- document.getElementById('todaySales').innerHTML='<h3 style="margin-top:18px">د نن ورځې خرڅلاو</h3>'+(arr.length?arr.map(x=>`<div class="item"><h3>${esc(x.item)} — ${esc(x.qty)}</h3><div class="meta">👤 ${esc(x.customer)}<br>💵 ${x.price.toLocaleString()} افغانۍ<br>🧑‍💼 خرڅوونکی: <b>${esc(x.createdBy)}</b></div><span class="badge b-sale">کندهار خرڅلاو</span></div>`).join(''):'<p>نن خرڅلاو لا نه دی ثبت شوی.</p>');
-}
-function renderStats(){
- const today=dayKey(),myShips=shipments.filter(x=>canSeeShipment(x));
- const ts=visibleSales().filter(x=>dayKey(x.createdAt)===today);
- stTotal.textContent=myShips.length;
- stTransit.textContent=myShips.filter(x=>x.status==='pending').length;
- stReceived.textContent=myShips.filter(x=>x.status==='received').length;
- stDelivered.textContent=myShips.filter(x=>x.status==='delivered').length;
- stShipMoney.textContent=myShips.filter(x=>x.status==='delivered').reduce((a,b)=>a+Number(b.price||0),0).toLocaleString();
- stSales.textContent=ts.length;stMoney.textContent=ts.reduce((a,b)=>a+Number(b.price||0),0).toLocaleString();
-}
+function renderTodaySales(){const arr=visibleSales().filter(x=>inWeek(x.createdAt));document.getElementById('todaySales').innerHTML='<h3 style="margin-top:18px">د روانې هفتې کندهار خرڅلاو</h3>'+(arr.length?arr.map(x=>`<div class="item"><h3>${esc(x.item)} — ${esc(x.qty)}</h3><div class="meta">👤 ${esc(x.customer)}<br>💵 ${Number(x.price||0).toLocaleString()} افغانۍ<br>🧑‍💼 خرڅوونکی: <b>${esc(x.createdBy)}</b></div><span class="badge b-sale">کندهار خرڅلاو</span></div>`).join(''):'<p>په روانه هفته کې خرڅلاو نشته.</p>')}
+function renderStats(){const keys=['mogh','gul','zabi'],names=current==='owner'?keys.map(k=>USERS[k].name):[USERS[current]?.name],sh=shipments.filter(x=>names.includes(x.createdBy)&&inWeek(x.createdAt)),sl=sales.filter(x=>names.includes(x.createdBy)&&inWeek(x.createdAt));stTotal.textContent=sh.length;stTransit.textContent=sh.filter(x=>x.status==='pending').length;stReceived.textContent=sh.filter(x=>x.status==='received').length;stDelivered.textContent=sh.filter(x=>x.status==='delivered').length;stShipMoney.textContent=sh.filter(x=>x.status==='delivered').reduce((a,b)=>a+Number(b.price||0),0).toLocaleString();stSales.textContent=sl.length;stMoney.textContent=sl.reduce((a,b)=>a+Number(b.price||0),0).toLocaleString()}
 function renderReports(){
  const d=reportDate.value||dayKey();
  const allSales=sales.filter(x=>dayKey(x.createdAt)===d),allShips=shipments.filter(x=>dayKey(x.createdAt)===d);
@@ -464,9 +466,9 @@ function renderReports(){
  <div class="reportLine"><b>📦 رسېدلي:</b><span>${sh.filter(x=>x.status==='received').length}</span></div>
  <div class="reportLine"><b>✅ تسلیم شوي:</b><span>${sh.filter(x=>x.status==='delivered').length}</span></div>
  <div class="reportLine"><b>💵 ${current==='owner'?'ټولې':'زما'} د رسونو پیسې:</b><span>${sh.filter(x=>x.status==='delivered').reduce((a,b)=>a+Number(b.price||0),0).toLocaleString()} افغانۍ</span></div>`;
- if(USERS[current]?.kind==='admin'){
+ if(current==='owner'){
   html+='<div class="item"><h3>📡 د ټولو Adminانو د رسونو حالت</h3>';
-  ['اصلي مالک','مغفرالله سالار','ګل افغان','زبیع الله شهزاده'].forEach(a=>{
+  ['مغفرالله سالار','ګل افغان','زبیع الله شهزاده'].forEach(a=>{
    const q=allShips.filter(x=>x.createdBy===a);
    html+=`<div class="reportLine"><b>${a}</b><span>ټول ${q.length} • رسېدلي ${q.filter(x=>x.status==='received').length} • تسلیم ${q.filter(x=>x.status==='delivered').length}</span></div>`;
   });html+='</div>';
@@ -481,9 +483,10 @@ function renderReports(){
   }else html+='<p>په دې نېټه د کندهار خرڅلاو نشته.</p>';
   html+='</div>';
  }
- reportBox.innerHTML=html;
+ const sd=new Date((d||dayKey())+'T12:00:00'),w=weekBounds(sd),wsh=shipments.filter(x=>inWeek(x.createdAt,w)),wsl=sales.filter(x=>inWeek(x.createdAt,w)),rkeys=current==='owner'?['mogh','gul','zabi']:[current],sum=a=>a.reduce((z,x)=>z+Number(x.price||0),0);html+=`<div class="item"><h3>📚 د هفتې راپور</h3><div class="meta">${w.start.toLocaleDateString('en-CA')} — ${w.end.toLocaleDateString('en-CA')}</div>`;rkeys.forEach(k=>{const n=USERS[k].name,sh=wsh.filter(x=>x.createdBy===n),sl=wsl.filter(x=>x.createdBy===n),g=sh.filter(x=>x.branch==='gereshk'),b=sh.filter(x=>x.branch==='boldak');html+=`<div class="item"><h3>${esc(n)}</h3><div class="meta">📦 ټول استول: <b>${sh.length}</b><br>📍 ګرشک: <b>${g.length}</b> — ${sum(g).toLocaleString()} افغانۍ<br>📍 سپین بولدک: <b>${b.length}</b> — ${sum(b).toLocaleString()} افغانۍ<br>🛍️ کندهار خرڅلاو: <b>${sl.length}</b> — ${sum(sl).toLocaleString()} افغانۍ</div></div>`});html+='</div>';
+  reportBox.innerHTML=html;
 }
-function renderAll(){renderStats();renderTodaySales();renderShipments();renderReports()}
+function renderAll(){renderStats();renderTodaySales();renderShipments();renderReports();renderSeparateAccounts()}
 
 // Cloud-first live sync: registered data stays persistent and updates all phones.
 async function initCloud(){
